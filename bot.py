@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 # --- CONFIGURACIÓN ---
-TOKEN = 'PAGA_TU_TOKEN_AQUI'
+TOKEN = '8040777981:AAHivo5O7sgDFf00sYpoUEfZ2BIPb2lqJOs'
 bot = telebot.TeleBot(TOKEN)
 
 # Crear carpeta para fotos si no existe

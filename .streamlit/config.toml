@@ -1,0 +1,21 @@
+[theme]
+# --- PALETA DE COLORES "AVISAMAÑOS ZARAGOZA" ---
+
+# Color principal (para botones, sliders, iconos, etc.)
+# Inspirado en el Rojo Carmesí del pañuelo del león.
+primaryColor = "#E3001B"
+
+# Color de fondo principal (Panel oscuro elegante)
+# Inspirado en el Azul Marino Oscuro del fondo circular del logo.
+backgroundColor = "#0E1117"
+
+# Color de fondo secundario (Para tarjetas, barra lateral, etc.)
+# Un tono azul grisáceo más claro para dar profundidad.
+secondaryBackgroundColor = "#262730"
+
+# Color del texto principal
+# Inspirado en el Blanco/Gris Claro del texto "AVISAMAÑOS".
+textColor = "#FAFAFA"
+
+# Tipografía (Sans Serif es más moderna y limpia)
+font = "sans serif"

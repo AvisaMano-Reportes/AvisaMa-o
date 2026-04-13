@@ -6,38 +6,67 @@ import os
 import qrcode
 from io import BytesIO
 
-st.set_page_config(layout="wide", page_title="Panel de Control Municipal")
+# --- CONFIGURACIÓN DE PÁGINA ---
+st.set_page_config(layout="wide", page_title="AVISAMAÑOS - Panel de Control")
 
-st.title("🚨 Panel de Control Municipal de Incidentes")
-st.markdown("Monitorización en tiempo real de reportes ciudadanos en Zaragoza")
+# --- INYECCIÓN DE CSS PARA PERSONALIZAR LA INTERFAZ ---
+# Ocultamos menús por defecto para que parezca una app nativa.
+estilo_personalizado = """
+<style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Personalizamos las métricas para que destaquen con el color principal */
+    [data-testid="stMetricValue"] {
+        font-size: 3rem;
+        color: #E3001B; /* Rojo Carmesí Avisamaños */
+    }
+</style>
+"""
+st.markdown(estilo_personalizado, unsafe_allow_html=True)
 
-# --- BARRA LATERAL CON QR ---
+# --- BARRA LATERAL (Sidebar) CON LOGO Y QR ---
 with st.sidebar:
+    # 1. MOSTRAR EL LOGO
+    # Asegúrate de que el nombre del archivo coincida con el tuyo real
+    ruta_logo = "logo_avisamanos.png" 
+    
+    if os.path.exists(ruta_logo):
+        # width='stretch' elimina el aviso de use_container_width
+        st.image(ruta_logo, width="stretch")
+    else:
+        st.error(f"❌ No se encontró el logo: {ruta_logo}")
+    
+    st.divider()
+
+    # 2. GENERAR Y MOSTRAR EL QR
     st.header("📱 ¡Pruébalo en directo!")
-    st.write("Escanea este QR con la cámara de tu móvil para abrir el bot en Telegram:")
+    st.write("Escanea este QR con tu móvil para abrir el bot:")
     
-    # Generar el QR al vuelo
     # ¡IMPORTANTE! Cambia esto por el enlace real de tu bot
-    enlace_bot = "https://t.me/AvisaManios_Reportes_Bot" 
+    enlace_bot = "https://t.me/pon_tu_bot_aqui" 
     
-    # 1. Creamos la imagen del QR
     img_qr = qrcode.make(enlace_bot)
     
-    # 2. La convertimos a formato "bytes" para que Streamlit no se queje
+    # Lo convertimos a bytes para Streamlit
     buffer = BytesIO()
     img_qr.save(buffer, format="PNG")
     imagen_bytes = buffer.getvalue()
     
-    # 3. La mostramos usando el nuevo formato "width='stretch'" para quitar el aviso
     st.image(imagen_bytes, width="stretch")
     st.caption("1. Escanea el QR\n2. Dale a Iniciar\n3. ¡Manda una foto!")
+
+# --- PANEL PRINCIPAL ---
+st.title("🚨 AVISAMAÑOS - Bot de Incidentes")
+st.markdown("Monitorización en tiempo real de reportes ciudadanos y activación de nodos IoT en Zaragoza.")
 
 # Conectar y leer datos
 conn = sqlite3.connect('reportes.db')
 try:
     df = pd.read_sql_query("SELECT * FROM incidencias", conn)
 except:
-    df = pd.DataFrame() # Evita error si la tabla no existe aún
+    df = pd.DataFrame()
 conn.close()
 
 if df.empty:
@@ -46,31 +75,30 @@ else:
     col1, col2 = st.columns(2)
     col1.metric("Total de Incidencias", len(df))
     # Ajustado a tu nueva categoría 'Alto'
-    col2.metric("Alertas Nivel Alto", len(df[df['categoria'] == 'Alto']))
+    col2.metric("Alertas Prioridad Alta", len(df[df['categoria'] == 'Alto']))
     
     st.divider()
 
     for index, row in df.iterrows():
         with st.container():
-            # Comprobamos si hay coordenadas (usamos pd.notnull para manejar el NULL de la DB)
+            # Layout dinámico: con o sin mapa
             tiene_ubicacion = pd.notnull(row['latitud']) and pd.notnull(row['longitud'])
-
+            
             if tiene_ubicacion:
-                # Layout con mapa: 3 columnas
                 col_img, col_info, col_map = st.columns([1, 2, 1.5])
             else:
-                # Layout sin mapa: 2 columnas (la de info se expande)
                 col_img, col_info = st.columns([1, 3.5])
             
             with col_img:
                 if os.path.exists(row['ruta_foto']):
-                    st.image(Image.open(row['ruta_foto']), use_container_width=True)
+                    st.image(Image.open(row['ruta_foto']), width="stretch")
+                else:
+                    st.warning("Imagen no encontrada")
                     
             with col_info:
-                st.subheader(f"Reporte #{row['id']} - {row['categoria']}")
+                st.subheader(f"Reporte #{row['id']} - Prioridad: {row['categoria']}")
                 st.write(f"**Fecha:** {row['fecha']}")
                 
-                # Mostrar texto de ubicación solo si existe
                 if tiene_ubicacion:
                     st.write(f"📍 **Coordenadas:** {row['latitud']}, {row['longitud']}")
                 else:
@@ -79,14 +107,13 @@ else:
                 st.write(f"**Descripción:** {row['descripcion']}")
                 
                 if row['categoria'] == 'Alto':
-                    st.error("🔴 El reporte esta siendo analizado en estos momentos. ¡GRACIAS!")
+                    st.error("🔴 ACCIÓN IOT: Foco rojo intermitente activado en farola inteligente.")
                 else:
-                    st.warning("🟡 Notificación enviada. ¡GRACIAS!")
-
-            # Solo creamos el mapa si hay datos
+                    st.warning("🟡 ACCIÓN IOT: Notificación enviada a mantenimiento.")
+            
             if tiene_ubicacion:
                 with col_map:
                     map_data = pd.DataFrame({'lat': [row['latitud']], 'lon': [row['longitud']]})
                     st.map(map_data, zoom=15)
-                    
+                
             st.divider()

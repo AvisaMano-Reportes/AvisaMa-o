@@ -35,7 +35,7 @@ user_data = {}
 # --- LÓGICA DEL BOT ---
 @bot.message_handler(commands=['start', 'reportar'])
 def send_welcome(message):
-    bot.reply_to(message, "¡Hola! Soy el bot del Ayuntamiento. Por favor, envíame una FOTO del problema que quieres reportar.")
+    bot.reply_to(message, "¡Hola! Soy el bot del Ayuntamiento de Zaragoza. Por favor, envíame una FOTO del problema que quieres reportar.")
     user_data[message.chat.id] = {}
 
 @bot.message_handler(content_types=['photo'])
@@ -53,9 +53,9 @@ def handle_docs_photo(message):
         
         # Pedir categoría con botones (teclado personalizado)
         markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-        markup.add('Peligro inminente de caída', 'Mobiliario roto', 'Luminaria apagada', 'Otro')
+        markup.add('Bajo', 'Medio', 'Alto')
         
-        msg = bot.reply_to(message, "Foto guardada. ¿Qué nivel de amenaza o categoría es?", reply_markup=markup)
+        msg = bot.reply_to(message, "Foto guardada. ¿Qué nivel peligro representa?", reply_markup=markup)
         bot.register_next_step_handler(msg, process_category_step)
         
     except Exception as e:
@@ -65,7 +65,7 @@ def process_category_step(message):
     user_data[message.chat.id]['categoria'] = message.text
     # Quitar el teclado
     markup = telebot.types.ReplyKeyboardRemove()
-    msg = bot.reply_to(message, "Categoría registrada. Por último, escribe una breve DESCRIPCIÓN del lugar o del problema:", reply_markup=markup)
+    msg = bot.reply_to(message, "Nivel de peligro registrado. Por último, escribe una breve DESCRIPCIÓN del lugar y del problema:", reply_markup=markup)
     bot.register_next_step_handler(msg, process_description_step)
 
 def process_description_step(message):
@@ -82,7 +82,7 @@ def process_description_step(message):
     conn.commit()
     conn.close()
     
-    bot.reply_to(message, "✅ ¡Reporte guardado con éxito! Los servicios municipales y la farola IoT más cercana han sido notificados.")
+    bot.reply_to(message, "✅ ¡Reporte guardado con éxito! Los servicios municipales han sido notificados y se atenderá lo antes posible. ¡Gracias!")
 
 # Iniciar el bot
 print("Bot en ejecución...")

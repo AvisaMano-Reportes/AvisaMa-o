@@ -6,7 +6,7 @@ import os
 
 st.set_page_config(layout="wide", page_title="Panel de Control Municipal")
 
-st.title("🚨 Panel de Triaje - Smart City")
+st.title("🚨 Panel de Control Municipal de Incidentes")
 st.markdown("Monitorización en tiempo real de reportes ciudadanos y activación de nodos IoT.")
 
 # Leer datos de SQLite

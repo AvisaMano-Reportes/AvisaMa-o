@@ -7,49 +7,48 @@ import qrcode
 from io import BytesIO
 
 # --- CONFIGURACIÓN DE PÁGINA ---
+# Optimización de la interfaz para aprovechar todo el ancho de pantalla
 st.set_page_config(layout="wide", page_title="AVISAMAÑOS - Panel de Control")
 
 # --- INYECCIÓN DE CSS PARA PERSONALIZAR LA INTERFAZ ---
-# Ocultamos menús por defecto para que parezca una app nativa.
+# Modificación del DOM de Streamlit
 estilo_personalizado = """
 <style>
+    /* Ocultar elementos nativos de Streamlit para un acabado más profesional */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Personalizamos las métricas para que destaquen con el color principal */
+    /* Enfatizar métricas con la identidad visual corporativa */
     [data-testid="stMetricValue"] {
         font-size: 3rem;
-        color: #E3001B; /* Rojo Carmesí Avisamaños */
+        color: #E3001B; /* Rojo Corporativo Zaragoza/Avisamaños */
     }
 </style>
 """
 st.markdown(estilo_personalizado, unsafe_allow_html=True)
 
-# --- BARRA LATERAL (Sidebar) CON LOGO Y QR ---
+# --- BARRA LATERAL ---
 with st.sidebar:
-    # 1. MOSTRAR EL LOGO
-    # Asegúrate de que el nombre del archivo coincida con el tuyo real
+    # Carga dinámica del logotipo
     ruta_logo = "logo_avisamanos.png" 
     
     if os.path.exists(ruta_logo):
-        # width='stretch' elimina el aviso de use_container_width
+        # El parámetro width="stretch" asegura adaptabilidad en el contenedor lateral
         st.image(ruta_logo, width="stretch")
     else:
-        st.error(f"❌ No se encontró el logo: {ruta_logo}")
+        st.error(f"❌ Recurso no encontrado: {ruta_logo}")
     
     st.divider()
 
-    # 2. GENERAR Y MOSTRAR EL QR
+    # Generación dinámica de código QR para acceso al bot
     st.header("📱 ¡Pruébalo en directo!")
     st.write("Escanea este QR con tu móvil para abrir el bot:")
     
-    # ¡IMPORTANTE! Cambia esto por el enlace real de tu bot
-    enlace_bot = "https://t.me/pon_tu_bot_aqui" 
+    enlace_bot = "https://t.me/pon_tu_bot_aqui" # Endpoint de Telegram
     
+    # Generación de QR en memoria para evitar latencia de lectura/escritura en disco
     img_qr = qrcode.make(enlace_bot)
-    
-    # Lo convertimos a bytes para Streamlit
     buffer = BytesIO()
     img_qr.save(buffer, format="PNG")
     imagen_bytes = buffer.getvalue()
@@ -57,44 +56,52 @@ with st.sidebar:
     st.image(imagen_bytes, width="stretch")
     st.caption("1. Escanea el QR\n2. Dale a Iniciar\n3. ¡Manda una foto!")
 
-# --- PANEL PRINCIPAL ---
+# --- PANEL DE CONTROL PRINCIPAL ---
 st.title("🚨 AVISAMAÑOS - Bot de Incidentes")
 st.markdown("Monitorización en tiempo real de reportes ciudadanos y activación de nodos IoT en Zaragoza.")
 
-# Conectar y leer datos
+# --- CAPA DE DATOS ---
+# Conexión persistente a la base de datos compartida con el bot
 conn = sqlite3.connect('reportes.db')
 try:
-    df = pd.read_sql_query("SELECT * FROM incidencias", conn)
-except:
-    df = pd.DataFrame()
+    # Extracción de datos mediante Pandas para facilitar el análisis y filtrado
+    df = pd.read_sql_query("SELECT * FROM incidencias ORDER BY id DESC", conn)
+except Exception as e:
+    df = pd.DataFrame() # Fallback en caso de tabla inexistente o error de lectura
 conn.close()
 
+# --- LÓGICA DE REPRESENTACIÓN ---
 if df.empty:
     st.info("No hay reportes en la base de datos todavía.")
 else:
+    # KPIs Superiores: Resumen ejecutivo del estado del sistema
     col1, col2 = st.columns(2)
     col1.metric("Total de Incidencias", len(df))
-    # Ajustado a tu nueva categoría 'Alto'
+    # Segmentación por prioridad crítica
     col2.metric("Alertas Prioridad Alta", len(df[df['categoria'] == 'Alto']))
     
     st.divider()
 
+    # Renderizado iterativo de tarjetas de incidentes
     for index, row in df.iterrows():
         with st.container():
-            # Layout dinámico: con o sin mapa
+            # Evaluación de geolocalización para determinar el layout dinámico
             tiene_ubicacion = pd.notnull(row['latitud']) and pd.notnull(row['longitud'])
             
+            # Si hay ubicación, se reserva espacio para el mapa (3 columnas), si no, solo 2.
             if tiene_ubicacion:
                 col_img, col_info, col_map = st.columns([1, 2, 1.5])
             else:
                 col_img, col_info = st.columns([1, 3.5])
             
+            # Columna 1: Evidencia Visual
             with col_img:
                 if os.path.exists(row['ruta_foto']):
                     st.image(Image.open(row['ruta_foto']), width="stretch")
                 else:
                     st.warning("Imagen no encontrada")
                     
+            # Columna 2: Detalles y Estado de Respuesta IoT
             with col_info:
                 st.subheader(f"Reporte #{row['id']} - Prioridad: {row['categoria']}")
                 st.write(f"**Fecha:** {row['fecha']}")
@@ -106,13 +113,16 @@ else:
                 
                 st.write(f"**Descripción:** {row['descripcion']}")
                 
+                # Feedback visual de la acción automatizada (Simulación de actuadores IoT)
                 if row['categoria'] == 'Alto':
-                    st.error("🔴 ACCIÓN IOT: Foco rojo intermitente activado en farola inteligente.")
+                    st.error("🔴 Notificación PRIORITARIA enviada")
                 else:
-                    st.warning("🟡 ACCIÓN IOT: Notificación enviada a mantenimiento.")
+                    st.warning("🟡 Notificación enviada")
             
+            # Columna 3 (Opcional): Contexto Geoespacial
             if tiene_ubicacion:
                 with col_map:
+                    # Preparación de DataFrame específico para el componente map de Streamlit
                     map_data = pd.DataFrame({'lat': [row['latitud']], 'lon': [row['longitud']]})
                     st.map(map_data, zoom=15)
                 

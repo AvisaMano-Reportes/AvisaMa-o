@@ -172,4 +172,4 @@ def process_location_step(message):
 # --- INICIO DEL SERVICIO ---
 if __name__ == "__main__":
     print("ChatBot IA en ejecución...")
-    bot.polling()
+    bot.infinity_polling(timeout=10, long_polling_timeout=5)

@@ -45,7 +45,7 @@ with st.sidebar:
     st.header("📱 ¡Pruébalo en directo!")
     st.write("Escanea este QR con tu móvil para abrir el bot:")
     
-    enlace_bot = "https://t.me/pon_tu_bot_aqui" # Endpoint de Telegram
+    enlace_bot = "https://t.me/AvisaManios_Reportes_Bot" # Endpoint de Telegram
     
     # Generación de QR en memoria para evitar latencia de lectura/escritura en disco
     img_qr = qrcode.make(enlace_bot)
